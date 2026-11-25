@@ -1,47 +1,15 @@
 package com.example.tipcalculator
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.tipcalculator.ui.theme.TipCalculatorTheme
-
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            TipCalculatorTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
+fun calculateDiscount(dishCount: Int): Int {
+    return when {
+        dishCount in 1..2 -> 3
+        dishCount in 3..5 -> 5
+        dishCount in 6..10 -> 7
+        dishCount >= 11 -> 10
+        else -> 0
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TipCalculatorTheme {
-        Greeting("Android")
-    }
+fun calculateDiscountAmount(sum: Double, discountPercent: Int): Double {
+    return sum * (discountPercent / 100.0)
 }
