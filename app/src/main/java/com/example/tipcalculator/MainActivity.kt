@@ -11,8 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
-
+// --- ЛОГИКА (без изменений) ---
 fun calculateDiscount(dishCount: Int): Int {
     return when {
         dishCount in 1..2 -> 3
@@ -27,60 +28,98 @@ fun calculateDiscountAmount(sum: Double, discountPercent: Int): Double {
     return sum * (discountPercent / 100.0)
 }
 
-
+// --- ИНТЕРФЕЙС ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TipCalculatorScreen() {
-    var orderSum by remember { mutableStateOf("") }
-    var dishCount by remember { mutableStateOf("") }
+fun TipCalculatorScreen(
+    initialSum: String = "",
+    initialDishes: String = ""
+) {
+    var orderSum by remember { mutableStateOf(initialSum) }
+    var dishCount by remember { mutableStateOf(initialDishes) }
     var tipPercent by remember { mutableStateOf(0f) }
+    var resultText by remember { mutableStateOf("") }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val currentDishCount = dishCount.toIntOrNull() ?: 0
     val currentDiscount = calculateDiscount(currentDishCount)
+    val currentSum = orderSum.toDoubleOrNull() ?: 0.0
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Калькулятор чаевых", fontSize = 24.sp)
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { innerPadding ->
+        Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
+            Text(text = "Калькулятор чаевых", fontSize = 24.sp)
 
-        OutlinedTextField(
-            value = orderSum,
-            onValueChange = { orderSum = it },
-            label = { Text("Сумма заказа") },
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp)
-        )
+            OutlinedTextField(
+                value = orderSum,
+                onValueChange = { orderSum = it },
+                label = { Text("Сумма заказа") },
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp)
+            )
 
-        OutlinedTextField(
-            value = dishCount,
-            onValueChange = { dishCount = it },
-            label = { Text("Количество блюд") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            OutlinedTextField(
+                value = dishCount,
+                onValueChange = { dishCount = it },
+                label = { Text("Количество блюд") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Text(text = "Чаевые: ${tipPercent.toInt()}%", modifier = Modifier.padding(top = 16.dp))
-        Slider(
-            value = tipPercent,
-            onValueChange = { tipPercent = it },
-            valueRange = 0f..25f,
-            steps = 4,
-            modifier = Modifier.fillMaxWidth()
-        )
+            Text(text = "Чаевые: ${tipPercent.toInt()}%", modifier = Modifier.padding(top = 16.dp))
+            Slider(
+                value = tipPercent,
+                onValueChange = { tipPercent = it },
+                valueRange = 0f..25f,
+                steps = 4,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Text(text = "Скидка:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            listOf(3, 5, 7, 10).forEach { discount ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
-                    RadioButton(
-                        selected = (currentDiscount == discount),
-                        onClick = { }
-                    )
-                    Text("$discount%", fontSize = 14.sp)
+            Text(text = "Скидка:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                listOf(3, 5, 7, 10).forEach { discount ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 4.dp)) {
+                        RadioButton(
+                            selected = (currentDiscount == discount),
+                            onClick = { }
+                        )
+                        Text("$discount%", fontSize = 14.sp)
+                    }
                 }
+            }
+
+            OutlinedTextField(
+                value = resultText,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Скидка / Итог") },
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+            )
+
+            Button(
+                onClick = {
+                    val discountAmount = calculateDiscountAmount(currentSum, currentDiscount)
+                    val finalSum = currentSum - discountAmount
+                    val tipAmount = finalSum * (tipPercent / 100f)
+
+                    resultText = "Итого: ${"%.2f".format(finalSum)} руб."
+
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Сумма чаевых: ${"%.2f".format(tipAmount)} руб.")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Итого")
             }
         }
     }
 }
 
-@Preview(showBackground = true, name = "Шаг 4: Радиокнопки")
+// --- ПРЕВЬЮ ---
+@Preview(showBackground = true, name = "Финальный экран (пустой)")
 @Composable
-fun PreviewStep4() {
+fun PreviewFinalEmpty() {
     TipCalculatorScreen()
 }
